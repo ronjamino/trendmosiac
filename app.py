@@ -2,19 +2,85 @@
 # app.py (Streamlit UI)
 # ==============================
 import streamlit as st
-import json
+import os
+import openai
+import ast
+from dotenv import load_dotenv
+from fetch_reddit_posts import fetch_reddit_posts
+from summarise_discussion import summarise_post
 
-with open("trendmosiac_output.json") as f:
-    data = json.load(f)
+# Load env vars
+load_dotenv()
+client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-st.title("TrendMosaic – Reddit Trend Explorer")
-topic = st.selectbox("Select a subreddit post:", [d['title'] for d in data])
+# App config
+st.set_page_config(page_title="TrendMosaic", layout="centered")
+st.title("🧩 TrendMosaic – Reddit Trend Explorer")
 
-post = next(p for p in data if p['title'] == topic)
-st.write("**Summary:**", post['summary']['summary'])
-st.write("**Sentiment:**", post['summary']['sentiment'])
-st.write("**Tags:**", ", ".join(post['summary']['tags']))
-st.write("[View on Reddit](%s)" % post['url'])
+# User input: Topic search
+topic = st.text_input("🔍 Search Reddit for posts about a topic (e.g. 'dbt', 'DuckDB', 'data pipelines')")
 
+if topic:
+    st.markdown("---")
+    st.markdown(f"Searching for posts related to: `{topic}`")
+
+    with st.spinner("Fetching Reddit posts and generating summaries..."):
+        try:
+            posts = fetch_reddit_posts(["dataengineering", "datascience"], topic, limit=10)
+            enriched = []
+
+            for post in posts:
+                summary_raw = summarise_post(post["title"], post["body"])
+                try:
+                    summary = ast.literal_eval(summary_raw)
+                except Exception:
+                    summary = {"summary": summary_raw, "sentiment": "unknown", "tags": []}
+                post["summary"] = summary
+                enriched.append(post)
+
+        except Exception as e:
+            st.error(f"❌ Something went wrong: {e}")
+            st.stop()
+
+    st.success(f"✅ Pulled {len(enriched)} posts about '{topic}'")
+
+    # User selects a post to view
+    titles = [p["title"] for p in enriched]
+    selected_title = st.selectbox("📌 Choose a Reddit post to explore:", titles)
+    selected_post = next(p for p in enriched if p["title"] == selected_title)
+
+    st.markdown("### ✍️ Summary")
+    st.write(selected_post["summary"]["summary"])
+    st.markdown(f"**🗣 Sentiment:** {selected_post['summary'].get('sentiment', 'unknown')}")
+    st.markdown(f"**🏷 Tags:** {', '.join(selected_post['summary'].get('tags', []))}")
+    st.markdown(f"[🔗 View on Reddit]({selected_post['url']})")
+
+    # Q&A input
+    st.markdown("---")
+    user_query = st.text_input("🧠 Ask a question about these Reddit posts:")
+
+    if user_query:
+        with st.spinner("Generating insight..."):
+            context = "\n\n".join([p["summary"]["summary"] for p in enriched])
+            prompt = f"""
+            Based on the following Reddit summaries, answer the question: "{user_query}"
+
+            Reddit Summaries:
+            {context}
+
+            Please respond with a concise and clear community-sourced answer, summarising any disagreements if relevant.
+            """
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": prompt}]
+            )
+            st.markdown("### 🧠 Community Insight")
+            st.write(response.choices[0].message.content)
+
+# Footer
 st.markdown("---")
-st.markdown("🔗 [View the code on GitHub](https://github.com/ronjamino/trendmosiac)")
+st.markdown("""
+<footer style='text-align: center;'>
+  🔗 <a href="https://github.com/ronjamino/trendmosiac" target="_blank">View the code on GitHub</a>
+</footer>
+""", unsafe_allow_html=True)
