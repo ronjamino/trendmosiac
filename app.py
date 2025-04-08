@@ -1,5 +1,5 @@
 # ==============================
-# app.py (Optional Streamlit UI)
+# app.py (Streamlit UI)
 # ==============================
 import streamlit as st
 import json
@@ -14,3 +14,6 @@ post = next(p for p in data if p['title'] == topic)
 st.write("**Summary:**", post.get("summary"))
 st.write("**Sentiment:**", post.get("sentiment", "unknown"))
 st.write("[View on Reddit](%s)" % post['url'])
+
+st.markdown("---")
+st.markdown("🔗 [View the code on GitHub](https://github.com/ronjamino/trendmosiac)")
