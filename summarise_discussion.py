@@ -1,7 +1,13 @@
 # ==============================
 # summarise_discussion.py
 # ==============================
-import openai
+import os
+from openai import OpenAI
+from dotenv import load_dotenv
+
+load_dotenv()
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def summarise_post(title, body):
     prompt = f"""
@@ -13,9 +19,9 @@ def summarise_post(title, body):
     Output as JSON with 'summary', 'sentiment', and 'tags'.
     """
     
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-4",
         messages=[{"role": "user", "content": prompt}]
     )
 
-    return response.choices[0].message['content']
+    return response.choices[0].message.content
