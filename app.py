@@ -18,7 +18,11 @@ st.set_page_config(page_title="TrendMosaic", layout="centered")
 st.title("🧩 TrendMosaic – Reddit Trend Explorer")
 
 # User input: Topic search
-topic = st.text_input("🔍 Search Reddit for posts about a topic (e.g. 'dbt', 'DuckDB', 'data pipelines')")
+topic = st.text_input(
+    "🔍 Search Reddit for posts about a topic (e.g. 'dbt', 'DuckDB', 'data pipelines')",
+    key="context_input"
+)
+    
 
 if topic:
     st.markdown("---")
@@ -57,7 +61,10 @@ if topic:
 
     # Q&A input
     st.markdown("---")
-    user_query = st.text_input("🧠 Ask a question about these Reddit posts:")
+    user_query = st.text_input(
+        "🧠 Ask a question about these Reddit posts:",
+        key="qa_input"
+    )
 
     if user_query:
         with st.spinner("Generating insight..."):
