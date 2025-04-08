@@ -16,7 +16,7 @@ if __name__ == "__main__":
     for post in posts:
         print(f"Summarising post: {post['title']}")
         summary = summarise_post(post['title'], post['body'])
-        post['summary'] = summary
+        post['summary'] = json.loads(summary)  # <--- convert string to dict
         enriched.append(post)
         time.sleep(1)  # avoid hitting rate limits
 
