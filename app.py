@@ -29,7 +29,19 @@ topic = st.text_input(
 # ---------------------------
 @st.cache_data(show_spinner=False)
 def get_reddit_insights(topic):
-    posts = fetch_reddit_posts(["dataengineering", "datascience"], topic, limit=12)
+    subreddits = [
+        "dataengineering",
+        "datascience",
+        "machinelearning",
+        "bigdata",
+        "analytics",
+        "learnmachinelearning",
+        "devops",
+        "SQL",
+        "CloudComputing"
+    ]
+
+    posts = fetch_reddit_posts(subreddits, topic, limit=12)
     enriched = []
 
     for post in posts:
@@ -43,6 +55,7 @@ def get_reddit_insights(topic):
 
     return enriched
 
+
 # ---------------------------
 # When topic is submitted
 # ---------------------------
@@ -55,7 +68,7 @@ if topic:
     # Optional: Force re-fetch button
     if st.button("🔁 Refresh Reddit posts"):
         st.cache_data.clear()
-        st.experimental_rerun()
+        st.rerun()
 
     # ---------------------------
     # Step 2: User Q&A Input
@@ -71,21 +84,22 @@ if topic:
         with st.spinner("💬 Generating insight from Reddit discussions..."):
             context = "\n\n".join([p["summary"]["summary"] for p in enriched])
             prompt = f"""
-            Based on the following Reddit summaries, answer the question: "{user_query}"
+Based on the following Reddit summaries, answer the question: "{user_query}"
 
-            Reddit Summaries:
-            {context}
+Reddit Summaries:
+{context}
 
-            Please respond with a concise and clear community-sourced answer, summarising any disagreements if relevant.
-            """
+Please respond with a concise and clear community-sourced answer, summarising any disagreements if relevant.
+"""
 
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": prompt}]
+            response = openai.chat.completions.create(
+                model="gpt-3.5-turbo",  # or "gpt-4"
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=400  # 🧠 Limit token usage to control cost
             )
 
             st.markdown("### 🧠 Community Insight")
-            st.write(response.choices[0].message.content)
+            st.write(response.choices[0].message.content.strip())
 
     # ---------------------------
     # Step 3: Reference Reddit Posts
