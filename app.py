@@ -16,7 +16,7 @@ client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 # Page config
 st.set_page_config(page_title="TrendMosaic", layout="centered")
 
-# Custom CSS for styling
+# CSS for pill badges
 st.markdown("""
 <style>
 .pill {
@@ -32,10 +32,9 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Custom CSS for sidebar
+# CSS for sidebar layout
 st.markdown("""
 <style>
-/* Clean up multiselect appearance in the sidebar */
 div[data-baseweb="select"] {
     font-size: 0.9rem;
 }
@@ -46,7 +45,7 @@ div[data-baseweb="select"] {
 </style>
 """, unsafe_allow_html=True)
 
-# Title
+# App title
 st.markdown("# 🧩 TrendMosaic – Tech Trend Explorer")
 
 # ---------------------------
@@ -60,29 +59,18 @@ topic = st.text_input(
 )
 
 # ---------------------------
-# Caching Reddit post fetch/summarisation
+# Fetch & Enrich
 # ---------------------------
 @st.cache_data(show_spinner=False)
 def get_trend_insights(topic):
     subreddits = [
-        "dataengineering",
-        "datascience",
-        "machinelearning",
-        "bigdata",
-        "analytics",
-        "learnmachinelearning",
-        "devops",
-        "SQL",
-        "CloudComputing"
+        "dataengineering", "datascience", "machinelearning",
+        "bigdata", "analytics", "learnmachinelearning",
+        "devops", "SQL", "CloudComputing"
     ]
 
-    # Fetch from Reddit
     reddit_posts = fetch_reddit_posts(subreddits, topic, total_limit=10)
-
-    # Fetch from Hacker News
     hn_posts = fetch_hn_posts(topic, limit=10)
-
-    # Fetch from Stack Overflow
     so_posts = fetch_so_posts(topic, limit=10)
 
     combined = reddit_posts + hn_posts + so_posts
@@ -99,9 +87,8 @@ def get_trend_insights(topic):
 
     return enriched, len(reddit_posts), len(hn_posts), len(so_posts)
 
-
 # ---------------------------
-# When topic is submitted
+# Main UI logic
 # ---------------------------
 if topic:
     with st.spinner("🔍 Fetching posts and generating summaries..."):
@@ -109,24 +96,18 @@ if topic:
 
     st.success(f"✅ Pulled {reddit_count} Reddit, {hn_count} Hacker News, and {so_count} Stack Overflow posts about '{topic}'")
 
-    from collections import Counter
-
-    # Extract tags from all summaries
+    # Tag extraction
     all_tags = []
     for post in enriched:
-        tags = post["summary"].get("tags", [])
-        all_tags.extend(tags)
-
-    # Count tag frequencies
+        all_tags.extend(post["summary"].get("tags", []))
     tag_counts = Counter(all_tags)
     top_tags = tag_counts.most_common(10)
 
-    # Sidebar
+    # Sidebar filter
     with st.sidebar:
         st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
         st.markdown("### 🏷 Filter by Tag")
 
-        # Convert top_tags into label → tag map
         tag_label_map = {f"{tag} ({count})": tag for tag, count in top_tags}
         display_options = list(tag_label_map.keys())
 
@@ -136,9 +117,10 @@ if topic:
             placeholder="Choose tags like 'dbt', 'DuckDB', etc.'"
         )
 
-    selected_tags = [tag_label_map[label] for label in selected_display_labels]
+        selected_tags = [tag_label_map[label] for label in selected_display_labels]
+        st.markdown('</div>', unsafe_allow_html=True)
 
-    # Filter posts based on selected tags
+    # Filter posts
     if selected_tags:
         filtered = [
             post for post in enriched
@@ -146,19 +128,27 @@ if topic:
         ]
     else:
         filtered = enriched
-
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # Convert selected labels back to raw tag values
-    selected_tags = [tag_label_map[label] for label in selected_display_labels]
+    
+    # No posts found
+    if not filtered:
+        st.warning("😕 No posts found for this topic. Try a different keyword or broaden your search.")
+        st.stop()
 
     # Refresh button
     if st.button("🔁 Refresh posts"):
         st.cache_data.clear()
         st.rerun()
 
+    # Show selected tag badges
+    if selected_tags:
+        st.markdown("### 🏷️ Showing posts tagged with:")
+        tag_html = " ".join([
+            f"<span class='pill'>{tag}</span>" for tag in selected_tags
+        ])
+        st.markdown(tag_html, unsafe_allow_html=True)
+
     # ---------------------------
-    # Step 2: User Q&A Input
+    # Step 2: Q&A Input
     # ---------------------------
     st.subheader("2️⃣ Ask a question about this topic")
     user_query = st.text_input(
@@ -178,27 +168,21 @@ Summaries:
 
 Please respond with a concise and clear community-sourced answer, summarising any disagreements if relevant.
 """
-
             response = openai.chat.completions.create(
-                model="gpt-3.5-turbo",  # or "gpt-4"
+                model="gpt-3.5-turbo",
                 messages=[{"role": "user", "content": prompt}],
-                max_tokens=400  # 🧠 Limit token usage to control cost
+                max_tokens=400
             )
-
             st.markdown("### 🧠 Community Insight")
             st.write(response.choices[0].message.content.strip())
 
-if selected_tags:
-    st.markdown("### 🏷️ Showing posts tagged with:")
-    tag_html = " ".join([
-        f"<span class='pill'>{tag}</span>" for tag in selected_tags
-    ])
-    st.markdown(tag_html, unsafe_allow_html=True)
-
-    # =============================
-    # 📚 Supporting Reddit Posts
-    # =============================
+    # ---------------------------
+    # Post Sections
+    # ---------------------------
     reddit_posts = [p for p in filtered if p.get("source") == "reddit"]
+    hn_posts = [p for p in filtered if p.get("source") == "hackernews"]
+    so_posts = [p for p in filtered if p.get("source") == "stackoverflow"]
+
     if reddit_posts:
         st.subheader("🟠 Reddit Posts")
         for post in reddit_posts:
@@ -208,10 +192,6 @@ if selected_tags:
                 st.markdown(f"**🏷 Tags:** {', '.join(post['summary'].get('tags', []))}")
                 st.markdown(f"[🔗 View on Reddit]({post['url']})")
 
-    # =============================
-    # 📚 Supporting Hacker News Posts
-    # =============================
-    so_posts = [p for p in filtered if p.get("source") == "stackoverflow"]
     if hn_posts:
         st.subheader("🟧 Hacker News Posts")
         for post in hn_posts:
@@ -221,10 +201,6 @@ if selected_tags:
                 st.markdown(f"**🏷 Tags:** {', '.join(post['summary'].get('tags', []))}")
                 st.markdown(f"[🔗 View on Hacker News]({post['url']})")
 
-    # =============================
-    # 📚 Supporting Stack Overflow Posts
-    # =============================
-    so_posts = [p for p in enriched if p.get("source") == "stackoverflow"]
     if so_posts:
         st.subheader("🟦 Stack Overflow Posts")
         for post in so_posts:
@@ -234,13 +210,12 @@ if selected_tags:
                 st.markdown(f"**🏷 Tags:** {', '.join(post['summary'].get('tags', []))}")
                 st.markdown(f"[🔗 View on Stack Overflow]({post['url']})")
 
+# ---------------------------
 # Footer
+# ---------------------------
 st.markdown("---")
-st.markdown(
-    """
-    <footer style='text-align: center;'>
-      🔗 <a href="https://github.com/ronjamino/trendmosiac" target="_blank">View the code on GitHub</a>
-    </footer>
-    """,
-    unsafe_allow_html=True
-)
+st.markdown("""
+<footer style='text-align: center;'>
+  🔗 <a href="https://github.com/ronjamino/trendmosiac" target="_blank">View the code on GitHub</a>
+</footer>
+""", unsafe_allow_html=True)
