@@ -16,6 +16,15 @@ client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 # Page config
 st.set_page_config(page_title="TrendMosaic", layout="centered")
 
+st.markdown("""
+<h1 style='font-size: 2.5rem; font-weight: 700; margin-bottom: 0.2em; color: #2ecc71;'>
+  🧩 TrendMosaic
+</h1>
+<h3 style='margin-top: 0; color: #ccc; font-weight: 400;'>
+  Your AI-powered radar for emerging tech trends
+</h3>
+""", unsafe_allow_html=True)
+
 # CSS for pill badges
 st.markdown("""
 <style>
