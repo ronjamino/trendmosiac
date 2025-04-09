@@ -16,6 +16,23 @@ client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 # Page config
 st.set_page_config(page_title="TrendMosaic", layout="centered")
 
+# Custom CSS for styling
+st.markdown("""
+<style>
+.pill {
+    display: inline-block;
+    background-color: #eeeeee;
+    color: #333;
+    padding: 0.35em 0.75em;
+    margin: 0.25em 0.25em 0 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 999px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# Custom CSS for sidebar
 st.markdown("""
 <style>
 /* Clean up multiselect appearance in the sidebar */
@@ -29,6 +46,7 @@ div[data-baseweb="select"] {
 </style>
 """, unsafe_allow_html=True)
 
+# Title
 st.markdown("# 🧩 TrendMosaic – Tech Trend Explorer")
 
 # ---------------------------
@@ -120,6 +138,15 @@ if topic:
 
     selected_tags = [tag_label_map[label] for label in selected_display_labels]
 
+    # Filter posts based on selected tags
+    if selected_tags:
+        filtered = [
+            post for post in enriched
+            if any(tag in post["summary"].get("tags", []) for tag in selected_tags)
+        ]
+    else:
+        filtered = enriched
+
     st.markdown('</div>', unsafe_allow_html=True)
 
     # Convert selected labels back to raw tag values
@@ -161,10 +188,17 @@ Please respond with a concise and clear community-sourced answer, summarising an
             st.markdown("### 🧠 Community Insight")
             st.write(response.choices[0].message.content.strip())
 
+if selected_tags:
+    st.markdown("### 🏷️ Showing posts tagged with:")
+    tag_html = " ".join([
+        f"<span class='pill'>{tag}</span>" for tag in selected_tags
+    ])
+    st.markdown(tag_html, unsafe_allow_html=True)
+
     # =============================
     # 📚 Supporting Reddit Posts
     # =============================
-    reddit_posts = [p for p in enriched if p.get("source") == "reddit"]
+    reddit_posts = [p for p in filtered if p.get("source") == "reddit"]
     if reddit_posts:
         st.subheader("🟠 Reddit Posts")
         for post in reddit_posts:
@@ -177,7 +211,7 @@ Please respond with a concise and clear community-sourced answer, summarising an
     # =============================
     # 📚 Supporting Hacker News Posts
     # =============================
-    hn_posts = [p for p in enriched if p.get("source") == "hackernews"]
+    so_posts = [p for p in filtered if p.get("source") == "stackoverflow"]
     if hn_posts:
         st.subheader("🟧 Hacker News Posts")
         for post in hn_posts:
