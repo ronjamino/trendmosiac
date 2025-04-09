@@ -122,10 +122,12 @@ if topic:
         tag_label_map = {f"{tag} ({count})": tag for tag, count in top_tags}
         display_options = list(tag_label_map.keys())
 
+        # Add a "Show all" option
         selected_display_labels = st.multiselect(
-            label="",
+            label=" ",
             options=display_options,
-            placeholder="Choose tags like 'dbt', 'DuckDB', etc.'"
+            placeholder="Choose tags like 'dbt', 'DuckDB', etc.'",
+            label_visibility="collapsed"
         )
 
         selected_tags = [tag_label_map[label] for label in selected_display_labels]
@@ -179,7 +181,7 @@ Summaries:
 
 Please respond with a concise and clear community-sourced answer, summarising any disagreements if relevant.
 """
-            response = openai.chat.completions.create(
+            response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=400
