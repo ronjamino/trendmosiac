@@ -105,20 +105,21 @@ if topic:
 
     # Sidebar
     with st.sidebar:
-    st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
-    st.markdown("### 🏷 Filter by Tag")
+        st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
+        st.markdown("### 🏷 Filter by Tag")
 
-    # Convert top_tags into label → tag map
-    tag_label_map = {f"{tag} ({count})": tag for tag, count in top_tags}
-    display_options = list(tag_label_map.keys())
+        # Convert top_tags into label → tag map
+        tag_label_map = {f"{tag} ({count})": tag for tag, count in top_tags}
+        display_options = list(tag_label_map.keys())
 
-    selected_display_labels = st.multiselect(
-        label="",
-        options=display_options,
-        placeholder="Choose tags like 'dbt', 'DuckDB', etc.'"
-    )
+        selected_display_labels = st.multiselect(
+            label="",
+            options=display_options,
+            placeholder="Choose tags like 'dbt', 'DuckDB', etc.'"
+        )
 
     selected_tags = [tag_label_map[label] for label in selected_display_labels]
+
     st.markdown('</div>', unsafe_allow_html=True)
 
     # Convert selected labels back to raw tag values
