@@ -76,25 +76,25 @@ def get_trend_insights(topic):
     combined = reddit_posts + hn_posts + so_posts
     enriched = []
 
-    for post in combined:
-        summary_raw = summarise_post(post["title"], post["body"])
+    with st.spinner("✍️ Summarising posts with GPT..."):
+        for post in combined:
+            summary_raw = summarise_post(post["title"], post["body"])
 
-        try:
-            # Ensure we parse a dict safely
-            parsed = ast.literal_eval(summary_raw)
-            if isinstance(parsed, dict) and "summary" in parsed:
-                summary = parsed
-            else:
-                raise ValueError("Parsed summary is not a valid dict with expected keys.")
-        except Exception as e:
-            summary = {
-                "summary": summary_raw.strip() if summary_raw else "⚠️ Summary could not be parsed.",
-                "sentiment": "unknown",
-                "tags": []
-            }
+            try:
+                parsed = ast.literal_eval(summary_raw)
+                if isinstance(parsed, dict) and "summary" in parsed:
+                    summary = parsed
+                else:
+                    raise ValueError("Parsed summary is not a valid dict with expected keys.")
+            except Exception as e:
+                summary = {
+                    "summary": summary_raw.strip() if summary_raw else "⚠️ Summary could not be parsed.",
+                    "sentiment": "unknown",
+                    "tags": []
+                }
 
-        post["summary"] = summary
-        enriched.append(post)
+            post["summary"] = summary
+            enriched.append(post)
 
     return enriched, len(reddit_posts), len(hn_posts), len(so_posts)
 
