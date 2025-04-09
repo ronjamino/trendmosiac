@@ -179,12 +179,13 @@ Based on the following Reddit summaries, answer the question: "{user_query}"
 Summaries:
 {context}
 
-Please respond with a concise and clear community-sourced answer, summarising any disagreements if relevant.
+Please respond with a concise and clear community-sourced answer (max 3–5 sentences). 
+If opinions vary, briefly mention that. Avoid unnecessary detail.
 """
             response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[{"role": "user", "content": prompt}],
-                max_tokens=400
+                max_tokens=200
             )
             st.markdown("### 🧠 Community Insight")
             st.write(response.choices[0].message.content.strip())
