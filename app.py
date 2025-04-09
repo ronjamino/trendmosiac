@@ -78,10 +78,21 @@ def get_trend_insights(topic):
 
     for post in combined:
         summary_raw = summarise_post(post["title"], post["body"])
+
         try:
-            summary = ast.literal_eval(summary_raw)
-        except Exception:
-            summary = {"summary": summary_raw, "sentiment": "unknown", "tags": []}
+            # Ensure we parse a dict safely
+            parsed = ast.literal_eval(summary_raw)
+            if isinstance(parsed, dict) and "summary" in parsed:
+                summary = parsed
+            else:
+                raise ValueError("Parsed summary is not a valid dict with expected keys.")
+        except Exception as e:
+            summary = {
+                "summary": summary_raw.strip() if summary_raw else "⚠️ Summary could not be parsed.",
+                "sentiment": "unknown",
+                "tags": []
+            }
+
         post["summary"] = summary
         enriched.append(post)
 

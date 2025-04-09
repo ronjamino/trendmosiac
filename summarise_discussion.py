@@ -21,10 +21,13 @@ Output as JSON with keys:
 - 'tags': a list of named technologies, tools, frameworks, or concepts mentioned (e.g. 'dbt', 'Snowflake', 'DuckDB').
 """
 
-    response = openai.chat.completions.create(
-        model="gpt-3.5-turbo",  # or "gpt-4"
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=300  # 🧠 limit token usage for summarisation
-    )
-
-    return response.choices[0].message.content.strip()
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=300
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        # You can also log the error here if needed
+        return "{'summary': '⚠️ Failed to summarise due to API error.', 'sentiment': 'unknown', 'tags': []}"
