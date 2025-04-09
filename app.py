@@ -54,9 +54,6 @@ div[data-baseweb="select"] {
 </style>
 """, unsafe_allow_html=True)
 
-# App title
-st.markdown("# 🧩 TrendMosaic – Tech Trend Explorer")
-
 # ---------------------------
 # Step 1: Context Input
 # ---------------------------
