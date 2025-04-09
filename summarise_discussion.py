@@ -10,12 +10,15 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 def summarise_post(title, body):
     prompt = f"""
-Summarise this Reddit post and extract the sentiment (positive, neutral, or negative).
+Summarise this post and extract the sentiment (positive, neutral, or negative).
 
 Title: {title}
 Body: {body}
 
-Output as JSON with 'summary', 'sentiment', and 'tags'.
+Output as JSON with keys:
+- 'summary': A brief summary of the discussion.
+- 'sentiment': positive, neutral, or negative.
+- 'tags': a list of named technologies, tools, frameworks, or concepts mentioned (e.g. 'dbt', 'Snowflake', 'DuckDB').
 """
 
     response = openai.chat.completions.create(
